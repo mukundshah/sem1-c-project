@@ -35,98 +35,57 @@ void textToBinary(char *text, int textlength, char *binary, int binaryLength){
     binary -= binaryLength;
     free(octet);
 }
-void bin64(int dec, char *binary, int binaryLength){
-    char *octoctet = malloc(64);
-    if(octoctet == NULL)
-        exit(1);
-    
-        octoctet = decimalToBinary(dec, 64);
-        while(*octoctet)
-            *binary++ = *octoctet++;
-        
-        octoctet -= 64;
-    
-    *binary = '\0';
-    binary -= binaryLength;
-    free(octoctet);
-}
 
 void padMessage(char *msg, char *msg_bin){
     //char *msg_bin;
+    int cursor = 0;
     int msg_len = strlen(msg);
     int msg_bin_len = msg_len * 8;
     msg_bin = malloc(msg_bin_len);
     if (msg_bin == NULL)
         exit(1);
+    char *size = malloc(64);
+    size = decimalToBinary(msg_bin_len, 64);
 
     textToBinary(msg, msg_len, msg_bin, msg_bin_len);
-    
+    cursor += msg_bin_len;
+
     int padding = 512-(msg_bin_len % 512);
     int total_len = msg_bin_len + padding;
     printf("%d\t%d\t%d\n", msg_bin_len, padding, total_len);
 
     msg_bin = realloc(msg_bin, total_len);
-    *(msg_bin + (msg_bin_len)) = '1';
-    // *(msg_bin + (msg_bin_len+1)) = '\0';
+    *(msg_bin + cursor) = '1';
     
-    // msg_bin_len = strlen(msg_bin);
-    // printf("%d\n", msg_bin_len);
-    // printf("Your binary encoding is:\n%s\n", msg_bin);
-    // int padding = 448 - msg_bin_len % 512;
-    // msg_bin = realloc(msg_bin, msg_bin_len+padding);
-    char *size = malloc(64);
-    size = decimalToBinary(24, 64);
-    for (int i = msg_bin_len+1; i < total_len; i++){
-
-        *(msg_bin + i) = '0';
-        if((total_len-i)<=64)
-            *(msg_bin + i) = *size++;
+    
+    
+    
+    for (cursor += 1; cursor < total_len; cursor++){
+        *(msg_bin + cursor) = '0';
+        if((total_len-cursor)<=64)
+            *(msg_bin + cursor) = *size++;
     }
-        
 
-    
-
-    // for (int i = msg_bin_len+1+(total_len-64); *size; i++)
-    //     *(msg_bin + i) = *size++;
-    
-
-    // *(msg_bin + (msg_bin_len+padding)) = '\0';
-    // msg_bin_len = strlen(msg_bin);
-    // printf("%d\n", msg_bin_len);
-    // printf("Your binary encoding is (initial):\n%s\n", msg_bin);
-
-    
-    // msg_bin = realloc(msg_bin, msg_bin_len+64);
-    // for (int i = msg_bin_len; i < 64; i++)
-    // {
-    //     *(msg_bin + i) = *size++;
-    // }
     *(msg_bin + total_len) = '\0';
-    //*msg_bin = '\0';
-    // bin64(24, msg_bin, msg_bin_len+padding+64);
-    // *(msg_bin + (msg_bin_len+padding)) = '\0';
+    
     msg_bin_len = strlen(msg_bin);
     printf("%d\n", msg_bin_len);
-    printf("Your binary encoding is (last):\n%s", msg_bin);
-    //printf("%s", size);
+    printf("Your binary encoding is (last):\n%s\n", msg_bin);
+    printf("%s", size);
     
 }
 
 
 int main(){
-    char *msg_bin,  msg_str[32] = "abc";
+    char *msg_bin,  msg_str[1000] = "Oh My Posh comes with many themes included out-of-the-box. Below are some screenshots of the more common themes.";
     char ch = 'a';
     
     int msg_len, msg_bin_len;
 
     msg_len = strlen(msg_str);
     msg_bin_len = msg_len * 8;
-    // msg_bin = malloc(msg_bin_len);
-    // if (msg_bin == NULL)
-    //     return 0;
 
-    //textToBinary(msg_str, msg_len, msg_bin, msg_bin_len);
     padMessage(msg_str, msg_bin);
-    //printf("Your binary encoding is:\n%s\n", msg_bin);
 
+    return 0;
 }

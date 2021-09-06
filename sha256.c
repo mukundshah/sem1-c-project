@@ -5,6 +5,22 @@
 #define BIT32 4294967295
 
 // ---------
+// Extras
+// ---------
+
+// Slice string at between a range.
+char *strslice(char *str, int start, int end){
+    int length = end - start + 1;
+    char *slice = malloc(length);
+    int j =0;
+    for (size_t i = start; i <= end; i++)
+        slice[j++] = str[i];
+    slice[j] = '\0';
+    return slice;
+}
+
+
+// ---------
 // Converters
 // ---------
 
@@ -128,40 +144,18 @@ int maj(int x, int y, int z){
 }
 
 
-void strslice(char *str_in, char *str_out, int start, int end){
-    int j =0;
-    for (size_t i = start; i <= end; i++)
-        str_out[j++] = str_in[i];
-    str_out[j] = '\0';
+// -------------
+// Preprocessing
+// -------------
+
+// Pad binary string message to multiple of 512 bits.
+char *paddingMessage(char *message){
+    int len = strlen(message);
+    int padding = 512 - (len % 512);
+    int total_length = len + padding;
+
+
 }
-
-
-
-int binaryToDecimal(char *bin, int bits){
-    int position = bits-1;
-    int decimal = 0;
-    for (size_t i = 0; i < bits; i++)
-    {
-        decimal += atoi(bin) * pow(2, position);
-        --position;
-    }
-    
-    // if(binary == NULL)
-    //     exit(1);
-    
-    // *(binary+cursor) = '\0';
-    
-    // while(cursor){
-    //     --cursor;
-    //     *(binary+cursor) = decimal % 2 + '0';
-    //     decimal /= 2;
-    // }
-
-    return decimal;
-}
-
-
-
 
 
 void padMessage(char *msg, char *msg_bin){

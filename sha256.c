@@ -2,7 +2,67 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#define BIT32 4294967295
 
+// ----------
+// Operations
+// ----------
+
+// Addition (truncate to 32 bits)
+int add(int x, int y){
+    int total = x + y;
+    return (total % BIT32);
+}
+
+// Rotate right (circular right shift)
+int rotr(int n, int x){
+    int right = x >> n;
+    int left = x << 32 - n;
+    int result = right | left;
+    return (result & BIT32);
+}
+
+// Shift right
+int shr(int n, int x){
+    int result = x >> n;
+    return result;
+}
+
+// ---------
+// Functions - Combined rotations and shifts using operations above
+// ---------
+
+// σ0
+int sigma0(x){
+    return rotr(7, x) ^ rotr(18, x) ^ shr(3, x);
+}
+
+// σ1
+int sigma1(x){
+    return rotr(17, x) ^ rotr(19, x) ^ shr(10, x);
+}
+
+// Σ0 (uppercase sigma)
+int usigma0(x){
+    return rotr(2, x) ^ rotr(13, x) ^ rotr(22, x);
+}
+
+// Σ1 (uppercase sigma)
+int usigma1(x){
+    return rotr(6, x) ^ rotr(11, x) ^ rotr(25, x);
+}
+
+// Choice - Use first bit to choose the second or third bit.
+// 1 → Second bit
+// 0 → Third bit
+int ch(int x, int y, int z){
+    return (x & y) ^ (~x & z);
+}
+
+// Majority - Result is the majority of the three bits.
+int maj(int x, int y, int z){
+    return (x & y) ^ (x & z) ^ (y & z);
+}
 
 
 void strslice(char *str_in, char *str_out, int start, int end){

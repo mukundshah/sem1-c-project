@@ -61,32 +61,48 @@ void padMessage(char *msg, char *msg_bin){
 
     textToBinary(msg, msg_len, msg_bin, msg_bin_len);
     
+    int padding = 512-(msg_bin_len % 512);
+    int total_len = msg_bin_len + padding;
+    printf("%d\t%d\t%d\n", msg_bin_len, padding, total_len);
 
-    msg_bin = realloc(msg_bin, msg_bin_len+1);
+    msg_bin = realloc(msg_bin, total_len);
     *(msg_bin + (msg_bin_len)) = '1';
-    *(msg_bin + (msg_bin_len+1)) = '\0';
+    // *(msg_bin + (msg_bin_len+1)) = '\0';
     
-    msg_bin_len = strlen(msg_bin);
-    printf("%d\n", msg_bin_len);
-    printf("Your binary encoding is:\n%s\n", msg_bin);
-    int padding = 448 - msg_bin_len % 512;
-    msg_bin = realloc(msg_bin, msg_bin_len+padding);
-    for (int i = msg_bin_len; i < padding; i++)
-    {
-        *(msg_bin + i) = '0';
-    }
-    *(msg_bin + (msg_bin_len+padding)) = '\0';
-    msg_bin_len = strlen(msg_bin);
-    printf("%d\n", msg_bin_len);
-    printf("Your binary encoding is (initial):\n%s\n", msg_bin);
-
+    // msg_bin_len = strlen(msg_bin);
+    // printf("%d\n", msg_bin_len);
+    // printf("Your binary encoding is:\n%s\n", msg_bin);
+    // int padding = 448 - msg_bin_len % 512;
+    // msg_bin = realloc(msg_bin, msg_bin_len+padding);
     char *size = malloc(64);
     size = decimalToBinary(24, 64);
+    for (int i = msg_bin_len+1; i < total_len; i++){
 
-    msg_bin = realloc(msg_bin, msg_bin_len+64);
-    while(*size)
-            *msg_bin++ = *size++;
-    *msg_bin = '\0';
+        *(msg_bin + i) = '0';
+        if((total_len-i)<=64)
+            *(msg_bin + i) = *size++;
+    }
+        
+
+    
+
+    // for (int i = msg_bin_len+1+(total_len-64); *size; i++)
+    //     *(msg_bin + i) = *size++;
+    
+
+    // *(msg_bin + (msg_bin_len+padding)) = '\0';
+    // msg_bin_len = strlen(msg_bin);
+    // printf("%d\n", msg_bin_len);
+    // printf("Your binary encoding is (initial):\n%s\n", msg_bin);
+
+    
+    // msg_bin = realloc(msg_bin, msg_bin_len+64);
+    // for (int i = msg_bin_len; i < 64; i++)
+    // {
+    //     *(msg_bin + i) = *size++;
+    // }
+    *(msg_bin + total_len) = '\0';
+    //*msg_bin = '\0';
     // bin64(24, msg_bin, msg_bin_len+padding+64);
     // *(msg_bin + (msg_bin_len+padding)) = '\0';
     msg_bin_len = strlen(msg_bin);

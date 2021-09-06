@@ -4,11 +4,74 @@
 #include <math.h>
 #define BIT32 4294967295
 
+// ---------
+// Converters
+// ---------
+
+// Convert integer to binary string.
+char *decimalToBinary(int decimal, int bits){
+    int cursor = bits;
+    char *binary = malloc(bits+1);
+    if(binary == NULL) exit(1);
+    *(binary+cursor) = '\0';
+    while(cursor){
+        --cursor;
+        *(binary+cursor) = decimal % 2 + '0';
+        decimal /= 2;
+    }
+    return binary;
+}
+
+// Convert string to binary string
+char *textToBinary(char *text){
+    int bits = 8, binaryLength = strlen(text) * bits;
+    char *byte = malloc(bits);
+    char *binary = malloc(binaryLength);
+    if(byte == NULL || binary == NULL)
+        exit(1);
+    while(*text){
+        byte = decimalToBinary(*text, 8);
+        while(*byte)
+            *binary++ = *byte++;
+        ++text;
+        byte -= 8;
+    }
+    *binary = '\0';
+    binary -= binaryLength;
+    free(byte);
+    return binary;
+}
+
+// Convert integer to hexadecimal string (32 bits)
+char *decimalToHex(int decimal, int len){
+    int cursor = len;
+    char *hex = malloc(len+1);
+    if(hex == NULL) exit(1);
+    *(hex+cursor) = '\0';
+    while(cursor){
+        --cursor;
+        int rem = decimal % 16;
+        if(rem<10)
+            *(hex+cursor) = rem + '0';
+        else if (rem >= 10){
+            if (rem == 10) *(hex+cursor) = 'a';
+            if (rem == 11) *(hex+cursor) = 'b';
+            if (rem == 12) *(hex+cursor) = 'c';
+            if (rem == 13) *(hex+cursor) = 'd';
+            if (rem == 14) *(hex+cursor) = 'e';
+            if (rem == 15) *(hex+cursor) = 'f';
+        }
+        decimal /= 16;
+    }
+    return hex;
+}
+
+
 // ----------
 // Operations
 // ----------
 
-// Addition (truncate to 32 bits)
+// Addition (also, truncate to 32 bits)
 int add(int x, int y){
     int total = x + y;
     return (total % BIT32);
@@ -72,22 +135,7 @@ void strslice(char *str_in, char *str_out, int start, int end){
     str_out[j] = '\0';
 }
 
-char *decimalToBinary(int decimal, int bits){
-    int cursor = bits;
-    char *binary = malloc(bits+1);
-    if(binary == NULL)
-        exit(1);
-    
-    *(binary+cursor) = '\0';
-    
-    while(cursor){
-        --cursor;
-        *(binary+cursor) = decimal % 2 + '0';
-        decimal /= 2;
-    }
 
-    return binary;
-}
 
 int binaryToDecimal(char *bin, int bits){
     int position = bits-1;
@@ -112,21 +160,7 @@ int binaryToDecimal(char *bin, int bits){
     return decimal;
 }
 
-void textToBinary(char *text, int textlength, char *binary, int binaryLength){
-    char *octet = malloc(8);
-    if(octet == NULL)
-        exit(1);
-    while(*text){
-        octet = decimalToBinary(*text, 8);
-        while(*octet)
-            *binary++ = *octet++;
-        ++text;
-        octet -= 8;
-    }
-    *binary = '\0';
-    binary -= binaryLength;
-    free(octet);
-}
+
 
 
 
@@ -141,7 +175,7 @@ void padMessage(char *msg, char *msg_bin){
     char *size = malloc(64);
     size = decimalToBinary(msg_bin_len, 64);
 
-    textToBinary(msg, msg_len, msg_bin, msg_bin_len);
+    textToBinary(msg);
     cursor += msg_bin_len;
 
     int padding = 512-(msg_bin_len % 512);

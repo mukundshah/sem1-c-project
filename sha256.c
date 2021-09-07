@@ -1,9 +1,12 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define BIT32 4294967295
+
+typedef unsigned int uint32;
 
 // ---------
 // Extras
@@ -89,9 +92,9 @@ char *decimalToHex(int decimal, int len){
 // ----------
 
 // Addition (also, truncate to 32 bits)
-int add(int argc,...){
+uint32 add(int argc,...){
     va_list args;
-    int total = 0;
+    uint32 total = 0;
     va_start(args, argc);
     for (int i = 0; i < argc; i++)
         total += va_arg(args, int);
@@ -100,16 +103,16 @@ int add(int argc,...){
 }
 
 // Rotate right (circular right shift)
-int rotr(int n, int x){
-    int right = x >> n;
-    int left = x << 32 - n;
-    int result = right | left;
+uint32 rotr(int n, int x){
+    uint32 right    = x >> n;
+    uint32 left     = x << 32 - n;
+    uint32 result   = right | left;
     return (result & BIT32);
 }
 
 // Shift right
-int shr(int n, int x){
-    int result = x >> n;
+uint32 shr(int n, int x){
+    uint32 result = x >> n;
     return result;
 }
 
@@ -118,34 +121,34 @@ int shr(int n, int x){
 // ---------
 
 // σ0
-int sigma0(int x){
+uint32 sigma0(uint32 x){
     return rotr(7, x) ^ rotr(18, x) ^ shr(3, x);
 }
 
 // σ1
-int sigma1(int x){
+uint32 sigma1(uint32 x){
     return rotr(17, x) ^ rotr(19, x) ^ shr(10, x);
 }
 
 // Σ0 (uppercase sigma)
-int usigma0(int x){
+uint32 usigma0(uint32 x){
     return rotr(2, x) ^ rotr(13, x) ^ rotr(22, x);
 }
 
 // Σ1 (uppercase sigma)
-int usigma1(int x){
+uint32 usigma1(uint32 x){
     return rotr(6, x) ^ rotr(11, x) ^ rotr(25, x);
 }
 
 // Choice - Use first bit to choose the second or third bit.
 // 1 → Second bit
 // 0 → Third bit
-int ch(int x, int y, int z){
+uint32 ch(uint32 x, uint32 y, uint32 z){
     return (x & y) ^ (~x & z);
 }
 
 // Majority - Result is the majority of the three bits.
-int maj(int x, int y, int z){
+uint32 maj(uint32 x, uint32 y, uint32 z){
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
@@ -188,39 +191,39 @@ char *paddingMessage(char *bin_msg){
 // Constants
 // ---------
 
+
 const int PRIMES[64] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
             89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
             181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277,
             281, 283, 293, 307, 311};
 
 // Constants (K) = Cube roots of the first 64 prime numbers (first 32 bits of the fractional part)
-int *K(){
-    int arr[64];
-    for (size_t i = 0; i < 64; i++)
-    {
-        arr[i] = pow(PRIMES[i], (1 / 3.0));
+uint32 *K(){
+    uint32 arr[64];
+    for (size_t i = 0; i < 64; i++){
+        double cb_root = pow(PRIMES[i], (1 / 3.0));
+        arr[i] = (uint32)((cb_root - floor(cb_root)) * pow(2, 32));
     }
-    
-
-    return 0;
+    return arr;
 }
 
 // Initial Hash Values (IHV) = Square roots of the first 8 prime numbers (first 32 bits of the fractional part)
-int *IHV(){
-    int arr[8];
+uint32 *IHV(){
+    uint32 arr[8];
     for (size_t i = 0; i < 8; i++)
     {
-        arr[i] = pow(PRIMES[i], (1 / 2.0));
+        double sq_root = pow(PRIMES[i], (1 / 2.0));
+        arr[i] = (uint32)((sq_root - floor(sq_root)) * pow(2, 32));
     }
-    return 0;
+    return arr;
 }
 
 // ----------
 // Compression
 // ----------
 
-int *compression(int *initial, int *schedule, int *constants){
-    int a = initial[0],
+uint32 *compression(uint32 *initial, uint32 *schedule, uint32 *constants){
+    uint32 a = initial[0],
         b = initial[1],
         c = initial[2],
         d = initial[3],
@@ -230,8 +233,8 @@ int *compression(int *initial, int *schedule, int *constants){
         h = initial[7];
 
     for (size_t i = 0; i < 64; i++){
-        int t1 = add(4, schedule[i], constants[i], usigma1(e), ch(e, f, g));
-        int t2 = add(2, usigma0(a), maj(a, b, c));
+        uint32 t1 = add(4, schedule[i], constants[i], usigma1(e), ch(e, f, g));
+        uint32 t2 = add(2, usigma0(a), maj(a, b, c));
 
         h = g;
         g = f;
@@ -243,7 +246,7 @@ int *compression(int *initial, int *schedule, int *constants){
         a = add(2, t1, t2);
     }
 
-    int hash[8];
+    uint32 hash[8];
     hash[7] = add(2, initial[7], h);
     hash[6] = add(2, initial[6], g);
     hash[5] = add(2, initial[5], f);

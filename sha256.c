@@ -307,15 +307,16 @@ char *sha256(char *message){
     char **blocks = malloc(block_count);
     blocks = createBlocks(padding, block_size);
 
-    uint32 *initial = (uint32 *)malloc(sizeof(uint32) * 8);
-    initial = IHV();
     uint32 *constants = (uint32 *)malloc(sizeof(uint32) * 64);
     constants = K();
     uint32 *hash = (uint32 *)malloc(sizeof(uint32) * 8);
+    uint32 *initial = (uint32 *)malloc(sizeof(uint32) * 8);
+    hash = IHV();
 
     for(int i=0; i<block_count; i++){
         uint32 *schedule = (uint32 *)malloc(sizeof(uint32)*64);
         schedule = calculateSchedules(*(blocks+i));
+        initial = hash;
         hash = compression(initial, schedule, constants);
     }
 

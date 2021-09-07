@@ -1,3 +1,7 @@
+// ! Works on OnlineGDB, but not on Windows machine.
+// TODO: Check this on linux.
+// ! There are many buggy codes, though.
+
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -196,10 +200,12 @@ char *paddingMessage(char *bin_msg){
 char **createBlocks(char *message, int block_size){
     int msg_len = strlen(message);
     int block_count = msg_len / block_size;
-    char **slice = (char **)malloc(sizeof(char *) * block_count);
-    for (int i = 0; i < block_count; i++)
-        *(slice + i) = strslice(message, block_size * i, (block_size * (i + 1)) - 1);
-    return slice;
+    char **blocks = (char **)malloc(sizeof(char *) * block_count);
+    for (int i = 0; i < block_count; i++){
+        *(blocks + i) = strslice(message, block_size * i, (block_size * (i + 1)) - 1);
+        printf("Block(%d):\n%s\n",i, *(blocks + i));
+    }
+    return blocks;
 }
 
 // -----------
@@ -209,11 +215,16 @@ char **createBlocks(char *message, int block_size){
 // Cut each message block into 32-bit schedules and calculate all 64 words from the message block.
 
 uint32 *calculateSchedules(char *block){
+    printf("%s\n", block);
     static uint32 slice[64];
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 16; i++){
         slice[i] = binaryToDecimal(strslice(block, 32 * i, (32 * (i + 1)) - 1));
-    for (int i = 16; i < 64; i++)
-        slice[i] = add(sigma1(slice[i-2]), slice[i-7], sigma0(slice[i-15]), slice[i-16]);
+        printf("W(%d) %u\n",i, slice[i]);
+    }
+    for (int i = 16; i < 64; i++){
+        slice[i] = add(4, sigma1(slice[i-2]), slice[i-7], sigma0(slice[i-15]), slice[i-16]);
+        printf("W(%d) %u\n",i, slice[i]);
+    }
     return slice;
 }
 
@@ -290,23 +301,31 @@ uint32 *compression(uint32 *initial, uint32 *schedule, uint32 *constants){
 }
 
 char *sha256(char *message){
+    printf("Message\n");
+    printf("%s\n", message);
     int msg_len = strlen(message);
 
     int bin_msg_len = msg_len * 8;
     char *bin_msg = malloc(bin_msg_len);
     bin_msg = textToBinary(message);
+    printf("Binary Message\n");
+    printf("%s\n", bin_msg);
 
 
     int pad_len = 447 - (bin_msg_len % 512);
-    int total_length = msg_len + 1 + pad_len + 64;
+    int total_length = bin_msg_len + 1 + pad_len + 64;
     char *padding = malloc(total_length);
     padding = paddingMessage(bin_msg);
+    printf("Padded Message\n");
+    printf("%s\n", padding);
 
     int block_size = 512;
     int block_count = total_length / block_size;
     char **blocks = malloc(block_count);
     blocks = createBlocks(padding, block_size);
+    printf("Padded Message\n");
 
+    
     uint32 *constants = (uint32 *)malloc(sizeof(uint32) * 64);
     constants = K();
     uint32 *hash = (uint32 *)malloc(sizeof(uint32) * 8);
@@ -319,17 +338,23 @@ char *sha256(char *message){
         initial = hash;
         hash = compression(initial, schedule, constants);
     }
-
+    printf("Hash Message\n");
     char *sha256_hash = malloc(64);
     for (int i = 0;i<8;i++)
+    {
         strcat(sha256_hash, decimalToHex(*(hash + i), 8));
-
+        printf("%s\n", decimalToHex(*(hash + i), 8));
+    }
+    
     return sha256_hash;
 }
 
 int main(){
-    char msg_str[1000] = "abc";
+    char msg_str[1000] = "abd";
+    //char block1[512] = "01001100011001010111010000100000011011100010000001101001011100110010000001110011011101000110111101110010011001010110010000100000011101010111001101101001011011100110011100100000001110000010000001100010011010010111010001110011001011100010000001001100011001010110011001110100001000000111001001101111011101000110000101110100011010010110111101101110001000000110111101100110001000000110111000100000001111010010000000110001001100010011000100110000001100000011000100110000001100010010000001100010011110010010000000110011";
     char *str = malloc(64);
+    //uint32 *schedule = (uint32 *)malloc(sizeof(uint32)*64);
+    //schedule = calculateSchedules(block1);
     str = sha256(msg_str);
     //uint32 num = sigma0(8);
     printf("%s", str);
@@ -337,4 +362,9 @@ int main(){
     return 0;
 }
 
+//abc: 3dc6c922a81854e7963c4dbe4bc72c3da2731f3adb28283b8877ef4457804078
+//abd: 9846cf86a328668a08c655fbf74b5f2ff203da86731d1f9649fe5dffc9db4f4a
+//     9846cf86a328668a08c655fbf74b5f2ff203da86731d1f9649fe5dffc9db4f4a
 
+// Let n is stored using 8 bits. Left rotation of n = 11100101 by 3 makes n = 00101111
+// b3def9a16d6f39a2da00207ac66730711dc26493f31978901b6cc8561284da9a

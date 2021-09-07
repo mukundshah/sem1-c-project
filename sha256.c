@@ -90,12 +90,12 @@ char *decimalToHex(int decimal, int len){
 
 // Addition (also, truncate to 32 bits)
 int add(int argc,...){
-    va_list valist;
+    va_list args;
     int total = 0;
-    va_start(valist, argc);
+    va_start(args, argc);
     for (int i = 0; i < argc; i++)
-        total += va_arg(va_list, int);
-    va_end(valist);
+        total += va_arg(args, int);
+    va_end(args);
     return (total % BIT32);
 }
 
@@ -187,22 +187,39 @@ char *paddingMessage(char *bin_msg){
 // ---------
 // Constants
 // ---------
-// Constants = Cube roots of the first 64 prime numbers (first 32 bits of the fractional part)
 
-int K[64] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+const int PRIMES[64] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
             89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
             181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277,
             281, 283, 293, 307, 311};
 
-// Initial Hash Values = Square roots of the first 8 prime numbers (first 32 bits of the fractional part)
+// Constants (K) = Cube roots of the first 64 prime numbers (first 32 bits of the fractional part)
+int *K(){
+    int arr[64];
+    for (size_t i = 0; i < 64; i++)
+    {
+        arr[i] = pow(PRIMES[i], (1 / 3.0));
+    }
+    
 
-int IHV[8] = {2, 3, 5, 7, 11, 13, 17, 19};
+    return 0;
+}
+
+// Initial Hash Values (IHV) = Square roots of the first 8 prime numbers (first 32 bits of the fractional part)
+int *IHV(){
+    int arr[8];
+    for (size_t i = 0; i < 8; i++)
+    {
+        arr[i] = pow(PRIMES[i], (1 / 2.0));
+    }
+    return 0;
+}
 
 // ----------
 // Compression
 // ----------
 
-int compression(int *initial, int *schedule, int *constants){
+int *compression(int *initial, int *schedule, int *constants){
     int a = initial[0],
         b = initial[1],
         c = initial[2],
@@ -216,12 +233,27 @@ int compression(int *initial, int *schedule, int *constants){
         int t1 = add(4, schedule[i], constants[i], usigma1(e), ch(e, f, g));
         int t2 = add(2, usigma0(a), maj(a, b, c));
 
-        a = add(2, t1, t2),
-        b = a, c = b, d = c, e = add(2, d, t1), f = e, g = f, h = g;
+        h = g;
+        g = f;
+        f = e;
+        e = add(2, d, t1);
+        d = c;
+        c = b;
+        b = a;
+        a = add(2, t1, t2);
     }
-    
-    
 
+    int hash[8];
+    hash[7] = add(2, initial[7], h);
+    hash[6] = add(2, initial[6], g);
+    hash[5] = add(2, initial[5], f);
+    hash[4] = add(2, initial[4], e);
+    hash[3] = add(2, initial[3], d);
+    hash[2] = add(2, initial[2], c);
+    hash[1] = add(2, initial[1], b);
+    hash[0] = add(2, initial[0], a);
+
+    return hash;
 }
 
 

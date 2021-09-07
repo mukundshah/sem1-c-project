@@ -1,6 +1,4 @@
 // ! Works on OnlineGDB, but not on Windows machine.
-// TODO: Check this on linux.
-// ! There are many buggy codes, though.
 
 #include <math.h>
 #include <stdio.h>
@@ -19,12 +17,13 @@ typedef unsigned int uint32;
 // Slice string at between a range.
 char *strslice(char *str, int start, int end){
     int length = end - start + 1;
-    char *slice = malloc(length);
+    char *slice = (char *)malloc(length);
     int j =0;
-    for (size_t i = start; i <= end; i++)
+    for (int i = start; i <= end; i++)
         slice[j++] = str[i];
     slice[j] = '\0';
     return slice;
+    
 }
 
 
@@ -35,7 +34,7 @@ char *strslice(char *str, int start, int end){
 // Convert integer to binary string.
 char *decimalToBinary(uint32 decimal, int bits){
     int cursor = bits;
-    char *binary = malloc(bits+1);
+    char *binary = (char *)malloc(bits+1);
     if(binary == NULL) exit(1);
     *(binary+cursor) = '\0';
     while(cursor){
@@ -49,8 +48,8 @@ char *decimalToBinary(uint32 decimal, int bits){
 // Convert string to binary string
 char *textToBinary(char *text){
     int bits = 8, binaryLength = strlen(text) * bits;
-    char *byte = malloc(bits);
-    char *binary = malloc(binaryLength);
+    char *byte = (char *)malloc(bits);
+    char *binary = (char *)malloc(binaryLength);
     if(byte == NULL || binary == NULL)
         exit(1);
     while(*text){
@@ -69,7 +68,7 @@ char *textToBinary(char *text){
 // Convert integer to hexadecimal string (32 bits)
 char *decimalToHex(uint32 decimal, int len){
     int cursor = len;
-    char *hex = malloc(len+1);
+    char *hex = (char *)malloc(len+1);
     if(hex == NULL) exit(1);
     *(hex+cursor) = '\0';
     while(cursor){
@@ -94,10 +93,7 @@ char *decimalToHex(uint32 decimal, int len){
 uint32 binaryToDecimal(char *binary){
     int bits = strlen(binary);
     uint32 base10 = 0;
-    // for(int i = 0; i<bits; i++)
-    //     if(binary[i] == 49)
-    //         base10 += pow(2,)
-    for(int i = bits-1; i >= 0; --i)
+        for(int i = bits-1; i >= 0; --i)
         if(binary[i] == 49)
             base10 += pow(2, (bits - 1) - i);
     return base10;
@@ -178,16 +174,16 @@ char *paddingMessage(char *bin_msg){
     int len = strlen(bin_msg);
     int padding = 447 - (len % 512);
     int total_length = len + 1 + padding + 64;
-    // char *size = malloc(64);
-    // size = decimalToBinary(msg_bin_len, 64);
     char *size = decimalToBinary(len, 64);
-    char *padded_message = malloc(total_length);
+
+    char *padded_message = (char *)malloc(total_length);
 
     strcat(padded_message, bin_msg);
     strcat(padded_message, "1");
-    for (size_t i = 0; i < padding; i++)
-        strcat(padded_message, "0");
+    for (int i = 0; i < padding; i++) strcat(padded_message, "0");
     strcat(padded_message, size);
+    *(padded_message + total_length) = '\0';
+
     free(size);
     return padded_message;
 }
@@ -197,14 +193,12 @@ char *paddingMessage(char *bin_msg){
 // -----------
 
 // Cut padded message into 512-bit blocks
-char **createBlocks(char *message, int block_size){
+char **createBlocks(char *message, int block_size, int *block_count){
     int msg_len = strlen(message);
-    int block_count = msg_len / block_size;
-    char **blocks = (char **)malloc(sizeof(char *) * block_count);
-    for (int i = 0; i < block_count; i++){
+    *block_count = msg_len / block_size;
+    char **blocks = (char **)malloc(sizeof(char *) * *block_count);
+    for (int i = 0; i < *block_count; i++)
         *(blocks + i) = strslice(message, block_size * i, (block_size * (i + 1)) - 1);
-        printf("Block(%d):\n%s\n",i, *(blocks + i));
-    }
     return blocks;
 }
 
@@ -215,23 +209,17 @@ char **createBlocks(char *message, int block_size){
 // Cut each message block into 32-bit schedules and calculate all 64 words from the message block.
 
 uint32 *calculateSchedules(char *block){
-    printf("%s\n", block);
-    static uint32 slice[64];
-    for (int i = 0; i < 16; i++){
+    uint32 *slice = (uint32 *)malloc(sizeof(uint32)*64);
+    for (int i = 0; i < 16; i++)
         slice[i] = binaryToDecimal(strslice(block, 32 * i, (32 * (i + 1)) - 1));
-        printf("W(%d) %u\n",i, slice[i]);
-    }
-    for (int i = 16; i < 64; i++){
+    for (int i = 16; i < 64; i++)
         slice[i] = add(4, sigma1(slice[i-2]), slice[i-7], sigma0(slice[i-15]), slice[i-16]);
-        printf("W(%d) %u\n",i, slice[i]);
-    }
     return slice;
 }
 
 // ---------
 // Constants
 // ---------
-
 
 const int PRIMES[64] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
             89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
@@ -240,8 +228,8 @@ const int PRIMES[64] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 
 
 // Constants (K) = Cube roots of the first 64 prime numbers (first 32 bits of the fractional part)
 uint32 *K(){
-    static uint32 arr[64];
-    for (size_t i = 0; i < 64; i++){
+    uint32 *arr = (uint32 *)malloc(sizeof(uint32)*64);
+    for (int i = 0; i < 64; i++){
         double cb_root = pow(PRIMES[i], (1 / 3.0));
         arr[i] = (uint32)((cb_root - floor(cb_root)) * pow(2, 32));
     }
@@ -250,8 +238,8 @@ uint32 *K(){
 
 // Initial Hash Values (IHV) = Square roots of the first 8 prime numbers (first 32 bits of the fractional part)
 uint32 *IHV(){
-    static uint32 arr[8];
-    for (size_t i = 0; i < 8; i++)
+    uint32 *arr = (uint32 *)malloc(sizeof(uint32)*8);
+    for (int i = 0; i < 8; i++)
     {
         double sq_root = pow(PRIMES[i], (1 / 2.0));
         arr[i] = (uint32)((sq_root - floor(sq_root)) * pow(2, 32));
@@ -273,7 +261,7 @@ uint32 *compression(uint32 *initial, uint32 *schedule, uint32 *constants){
         g = initial[6],
         h = initial[7];
 
-    for (size_t i = 0; i < 64; i++){
+    for (int i = 0; i < 64; i++){
         uint32 t1 = add(4, schedule[i], constants[i], usigma1(e), ch(e, f, g));
         uint32 t2 = add(2, usigma0(a), maj(a, b, c));
 
@@ -287,7 +275,7 @@ uint32 *compression(uint32 *initial, uint32 *schedule, uint32 *constants){
         a = add(2, t1, t2);
     }
 
-    static uint32 hash[8];
+    uint32 *hash = (uint32 *)malloc(sizeof(uint32)*8);
     hash[7] = add(2, initial[7], h);
     hash[6] = add(2, initial[6], g);
     hash[5] = add(2, initial[5], f);
@@ -301,64 +289,36 @@ uint32 *compression(uint32 *initial, uint32 *schedule, uint32 *constants){
 }
 
 char *sha256(char *message){
-    printf("Message\n");
-    printf("%s\n", message);
-    int msg_len = strlen(message);
-
-    int bin_msg_len = msg_len * 8;
-    char *bin_msg = malloc(bin_msg_len);
-    bin_msg = textToBinary(message);
-    printf("Binary Message\n");
-    printf("%s\n", bin_msg);
-
-
-    int pad_len = 447 - (bin_msg_len % 512);
-    int total_length = bin_msg_len + 1 + pad_len + 64;
-    char *padding = malloc(total_length);
-    padding = paddingMessage(bin_msg);
-    printf("Padded Message\n");
-    printf("%s\n", padding);
-
-    int block_size = 512;
-    int block_count = total_length / block_size;
-    char **blocks = malloc(block_count);
-    blocks = createBlocks(padding, block_size);
-    printf("Padded Message\n");
-
+    char *bin_msg = textToBinary(message);
+    char *padded_msg = paddingMessage(bin_msg);
     
-    uint32 *constants = (uint32 *)malloc(sizeof(uint32) * 64);
-    constants = K();
-    uint32 *hash = (uint32 *)malloc(sizeof(uint32) * 8);
-    uint32 *initial = (uint32 *)malloc(sizeof(uint32) * 8);
-    hash = IHV();
+    int block_count;
+    char **blocks = createBlocks(padded_msg, 512, &block_count);
+    
+    uint32 *constants = K();
+    uint32 *hash = IHV();
+    uint32 *initial;
 
     for(int i=0; i<block_count; i++){
-        uint32 *schedule = (uint32 *)malloc(sizeof(uint32)*64);
-        schedule = calculateSchedules(*(blocks+i));
+        uint32 *schedule = calculateSchedules(*(blocks+i));
         initial = hash;
         hash = compression(initial, schedule, constants);
     }
-    printf("Hash Message\n");
-    char *sha256_hash = malloc(64);
-    for (int i = 0;i<8;i++)
-    {
-        strcat(sha256_hash, decimalToHex(*(hash + i), 8));
-        printf("%s\n", decimalToHex(*(hash + i), 8));
-    }
     
+    char *sha256_hash = (char *)malloc(64);
+    for (int i = 0;i<8;i++)
+        strcat(sha256_hash, decimalToHex(*(hash + i), 8));
+    free(hash);
+    free(initial);
+    free(padded_msg);
+    free(blocks);
     return sha256_hash;
 }
 
 int main(){
-    char msg_str[1000] = "abd";
-    //char block1[512] = "01001100011001010111010000100000011011100010000001101001011100110010000001110011011101000110111101110010011001010110010000100000011101010111001101101001011011100110011100100000001110000010000001100010011010010111010001110011001011100010000001001100011001010110011001110100001000000111001001101111011101000110000101110100011010010110111101101110001000000110111101100110001000000110111000100000001111010010000000110001001100010011000100110000001100000011000100110000001100010010000001100010011110010010000000110011";
-    char *str = malloc(64);
-    //uint32 *schedule = (uint32 *)malloc(sizeof(uint32)*64);
-    //schedule = calculateSchedules(block1);
-    str = sha256(msg_str);
-    //uint32 num = sigma0(8);
+    char msg_str[100] = "abjdhjfhc";
+    char *str = sha256(msg_str);
     printf("%s", str);
-    //printf("%u", num);
     return 0;
 }
 

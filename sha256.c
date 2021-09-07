@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <math.h>
 #define BIT32 4294967295
 
@@ -88,8 +89,13 @@ char *decimalToHex(int decimal, int len){
 // ----------
 
 // Addition (also, truncate to 32 bits)
-int add(int x, int y){
-    int total = x + y;
+int add(int argc,...){
+    va_list valist;
+    int total = 0;
+    va_start(valist, argc);
+    for (int i = 0; i < argc; i++)
+        total += va_arg(va_list, int);
+    va_end(valist);
     return (total % BIT32);
 }
 
@@ -112,22 +118,22 @@ int shr(int n, int x){
 // ---------
 
 // σ0
-int sigma0(x){
+int sigma0(int x){
     return rotr(7, x) ^ rotr(18, x) ^ shr(3, x);
 }
 
 // σ1
-int sigma1(x){
+int sigma1(int x){
     return rotr(17, x) ^ rotr(19, x) ^ shr(10, x);
 }
 
 // Σ0 (uppercase sigma)
-int usigma0(x){
+int usigma0(int x){
     return rotr(2, x) ^ rotr(13, x) ^ rotr(22, x);
 }
 
 // Σ1 (uppercase sigma)
-int usigma1(x){
+int usigma1(int x){
     return rotr(6, x) ^ rotr(11, x) ^ rotr(25, x);
 }
 
@@ -149,13 +155,75 @@ int maj(int x, int y, int z){
 // -------------
 
 // Pad binary string message to multiple of 512 bits.
-char *paddingMessage(char *message){
-    int len = strlen(message);
-    int padding = 512 - (len % 512);
-    int total_length = len + padding;
+char *paddingMessage(char *bin_msg){
+    int len = strlen(bin_msg);
+    int padding = 447 - (len % 512);
+    int total_length = len + 1 + padding + 64;
+    // char *size = malloc(64);
+    // size = decimalToBinary(msg_bin_len, 64);
+    char *size = decimalToBinary(len, 64);
+    char *padded_message = malloc(total_length);
+    strcat(padded_message, bin_msg);
+    strcat(padded_message, '1');
+    for (size_t i = 0; i < padding; i++)
+        strcat(padded_message, '0');
+    strcat(padded_message, size);
+    free(size);
+    return padded_message;
+}
 
+// -----------
+// Message Blocks
+// -----------
+
+// Cut padded message into 512-bit blocks
+
+// -----------
+// Message Schedules
+// -----------
+
+// Cut each message block into 32-bit schedules and calculate all 64 words from the message block.
+
+// ---------
+// Constants
+// ---------
+// Constants = Cube roots of the first 64 prime numbers (first 32 bits of the fractional part)
+
+int K[64] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+            89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
+            181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277,
+            281, 283, 293, 307, 311};
+
+// Initial Hash Values = Square roots of the first 8 prime numbers (first 32 bits of the fractional part)
+
+int IHV[8] = {2, 3, 5, 7, 11, 13, 17, 19};
+
+// ----------
+// Compression
+// ----------
+
+int compression(int *initial, int *schedule, int *constants){
+    int a = initial[0],
+        b = initial[1],
+        c = initial[2],
+        d = initial[3],
+        e = initial[4],
+        f = initial[5],
+        g = initial[6],
+        h = initial[7];
+
+    for (size_t i = 0; i < 64; i++){
+        int t1 = add(4, schedule[i], constants[i], usigma1(e), ch(e, f, g));
+        int t2 = add(2, usigma0(a), maj(a, b, c));
+
+        a = add(2, t1, t2),
+        b = a, c = b, d = c, e = add(2, d, t1), f = e, g = f, h = g;
+    }
+    
+    
 
 }
+
 
 
 void padMessage(char *msg, char *msg_bin){

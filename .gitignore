@@ -36,3 +36,4 @@ src/shell.c
 src/sqlite3.c
 inc/sqlite3.h
 inc/sqlite3ext.h
+storage.db

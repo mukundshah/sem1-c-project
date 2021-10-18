@@ -14,7 +14,7 @@ After downloading the Sqlite3 Amalgamation, copy the `sqlite3.h` and `sqlite3ext
 
 ## Build & Run
 
-Alternatively, you can download the executable from [here.]()
+Alternatively, you can download the executable from [here.](https://github.com/mukundshah/sem1-c-project/releases)
 
 ```bash
 #build project

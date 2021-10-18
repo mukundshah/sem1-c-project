@@ -1,0 +1,7 @@
+{
+	"files.associations": {
+		"hellomake.h": "c",
+		"headers.h": "c",
+		"unistd.h": "c"
+	}
+}

@@ -39,7 +39,7 @@ void adminLogin(char **current_user)
         sprintf(sql, "SELECT username, password from admin WHERE username = '%s' AND password = '%s'", username, password);
         exec_sql_with_callback(sql, checkUser);
     }
-    current_user = username;
+    *current_user = username;
     user_allowed = 0;
     system("cls");
     gotoxy(10, 11);
